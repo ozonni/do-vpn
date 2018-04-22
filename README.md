@@ -1,2 +1,2 @@
 # do-vpn
-Simplifies VPN setup in DigitalOcean
+Simplifies VPN setup in DigitalOcean.

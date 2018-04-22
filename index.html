@@ -6,7 +6,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <link rel="shortcut icon" type="image/png" href="favicon.png"/>
+    <link rel="shortcut icon" type="image/png" href="favicon.png" />
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
@@ -105,14 +105,16 @@
                         </thead>
                         <tbody>
                             <tr v-for="inst in instances">
-                                <td> {{ inst.status == 'active' ? inst.ip : 'creating...' }}</td>
+                                <td>
+                                    <span class="badge badge-info c-pointer" v-if="inst.status != 'active'" v-on:click="loadInstList">refresh (takes ~50s.)</span>
+                                    <span v-if="inst.status == 'active'">{{ inst.ip }}</span>
+                                </td>
                                 <td>{{ inst.username }}</td>
                                 <td>{{ inst.password }}</td>
                                 <td>{{ inst.psk }}</td>
                                 <td>{{ inst.created }}</td>
                                 <td>
-                                    <i class="material-icons c-pointer" title="Reload" v-on:click="loadInstList">autorenew</i>
-                                    <i class="material-icons c-pointer ml-3" title="Delete" v-on:click="deleteInst(inst)">delete_forever</i>
+                                    <i class="material-icons c-pointer" title="Delete" v-on:click="deleteInst(inst)">delete_forever</i>
                                 </td>
                             </tr>
                         </tbody>

@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+        crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://unpkg.com/nprogress@0.2.0/nprogress.css" rel="stylesheet">
+
+    <style>
+        html {
+            position: relative;
+            min-height: 100%;
+        }
+
+        body {
+            margin-bottom: 60px;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 60px;
+            line-height: 60px;
+            background-color: #f5f5f5;
+        }
+
+        .c-pointer {
+            cursor: pointer;
+        }
+
+        .material-icons.md-48 {
+            font-size: 48px;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+    <title>Do VPN</title>
+</head>
+
+<body class="bg-light">
+    <main role="main" class="container" id="app">
+        <div class="py-4 text-center">
+            <i class="material-icons md-48">security</i>
+            <h2>Do your own VPN</h2>
+            <p class="mt-4" v-if="!authorized">Using
+                <a href="https://www.digitalocean.com" target="_blank">DigitalOcean</a> you can have your private VPN server just for $5/mo. We do
+                <b>NOT</b> charge anything, you only pay to DigitalOcean for droplets and we do
+                <b>NOT</b> store any of your data, as well as we do
+                <b>NOT</b> analyze your traffic. We just make it simple to set up your own VPN. If you already have DigitalOcean
+                account you can proceed by clicking on
+                <b>Authorize</b> otherwise follow this
+                <a href="https://m.do.co/c/0e1ce5621123" target="_blank">link</a> to create a new account.</p>
+        </div>
+        <div>
+
+            <div class="row justify-content-md-center">
+                <div class="col-md-8" v-if="!authorized">
+                    <a class="btn btn-primary btn-lg btn-block" href="https://cloud.digitalocean.com/v1/oauth/authorize?response_type=token&client_id=a74eb85bd3567014726fbf26a6f713cbf64c28224d5b838b8abbc9706fcec178&redirect_uri=https://do-vpn.com&scope=read write"
+                        role="button">Authorize with DigitalOcean</a>
+                </div>
+                <div class="col-md-10" v-cloak v-if="authorized">
+                    <p>
+                        Below is a list of VPN servers you have created. You can delete one or create a new one. By creating a new VPN server a new
+                        DigitalOcean droplet will be created in your account with 1TB internet traffic available. Each VPN
+                        server will cost you
+                        <a href="https://www.digitalocean.com/pricing" target="_blank">$5/mo</a>.
+                    </p>
+                    <div class="alert alert-danger" role="alert" v-if="errorMsg">
+                        {{ errorMsg }}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close" v-on:click="closeErrorMsg">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th scope="col">IP Address</th>
+                                <th scope="col">Username</th>
+                                <th scope="col">Password</th>
+                                <th scope="col">PSK</th>
+                                <th scope="col">Created</th>
+                                <th scope="col">#</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="inst in instances">
+                                <td> {{ inst.status == 'active' ? inst.ip : 'creating...' }}</td>
+                                <td>{{ inst.username }}</td>
+                                <td>{{ inst.password }}</td>
+                                <td>{{ inst.psk }}</td>
+                                <td>{{ inst.created }}</td>
+                                <td>
+                                    <i class="material-icons c-pointer" title="Reload" v-on:click="loadInstList">autorenew</i>
+                                    <i class="material-icons c-pointer ml-3" title="Delete" v-on:click="deleteInst(inst)">delete_forever</i>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button type="button" class="btn btn-primary btn-lg btn-block" v-on:click="createInst">Create VPN</button>
+
+                    <div class="text-center mt-5">
+                        <b>How to configure VPN on your device</b>
+                        <ul class="list-inline">
+                            <li class="list-inline-item">
+                                <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#ios" target="_blank">iOS (iPhone/iPad)</a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#android" target="_blank">Android</a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#os-x" target="_blank">OS X (macOS)</a>
+                            </li>
+                            <li class="list-inline-item">
+                                <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#windows" target="_blank">Windows</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <span class="text-muted">To deny people their human rights is to challenge their very humanity - Nelson Mandela</span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.0"></script>
+    <script src="https://unpkg.com/nprogress@0.2.0/nprogress.js"></script>
+    <script>
+        var params = new URLSearchParams(window.location.hash.substr(1))
+        var token = params.get('access_token');
+
+        Vue.http.interceptors.push((request, next) => {
+            NProgress.start();
+            next((response) => {
+                NProgress.done();
+            });
+        });
+
+        if (token) {
+            Vue.http.headers.common['Authorization'] = 'Bearer ' + token;
+            Vue.http.headers.common['Content-Type'] = 'application/json';
+        }
+
+        var generateRandomString = function () {
+            var text = "";
+            var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+            for (var i = 0; i < 8; i++)
+                text += possible.charAt(Math.floor(Math.random() * possible.length));
+
+            return text;
+        };
+
+        var app = new Vue({
+            el: '#app',
+            data: {
+                authorized: !!token,
+                instances: [],
+                errorMsg: null
+            },
+            methods: {
+                createInst: function () {
+                    var psk = generateRandomString();
+                    var username = generateRandomString();
+                    var password = generateRandomString();
+
+                    var userData = `#!/bin/bash
+modprobe af_key
+docker run --name ipsec-vpn-server -e VPN_IPSEC_PSK=${psk} -e VPN_USER=${username} -e VPN_PASSWORD=${password} --restart=always -p 500:500/udp -p 4500:4500/udp -v /lib/modules:/lib/modules:ro -d --privileged hwdsl2/ipsec-vpn-server`;
+
+                    const name = "do-vpn";
+
+                    var newDroplet =
+                        {
+                            name: name,
+                            region: "fra1",
+                            size: "s-1vcpu-1gb",
+                            image: "docker-16-04",
+                            tags: [name, "psk:" + psk, "username:" + username, "password:" + password],
+                            user_data: userData
+                        };
+
+                    this.$http.post('https://api.digitalocean.com/v2/droplets', newDroplet).then(response => {
+                        if (response.status === 202) {
+                            console.log("created");
+                            this.loadInstList();
+                        }
+                    }, response => {
+                        console.log(response);
+                        this.errorMsg = response.body.message;
+                    });
+                },
+                deleteInst: function (inst) {
+                    this.$http.delete('https://api.digitalocean.com/v2/droplets/' + inst.id).then(response => {
+                        if (response.status === 204) {
+                            this.instances = this.instances.filter(x => x.id !== inst.id);
+                        }
+                    }, response => {
+                        console.log(response);
+                        this.errorMsg = response.body.message;
+                    });
+                },
+                loadInstList: function () {
+                    this.$http.get('https://api.digitalocean.com/v2/droplets?tag_name=do-vpn').then(response => {
+                        if (response.status === 200) {
+                            this.instances = response.body.droplets.map(x => {
+                                var inst = {
+                                    id: x.id,
+                                    status: x.status,
+                                    created: x.created_at,
+                                    username: x.tags.find(x => x.startsWith("username:")).substr(9),
+                                    password: x.tags.find(x => x.startsWith("password:")).substr(9),
+                                    psk: x.tags.find(x => x.startsWith("psk:")).substr(4),
+                                };
+
+                                if (x.networks.v4[0]) {
+                                    inst.ip = x.networks.v4[0].ip_address
+                                }
+
+                                return inst;
+                            });
+                        }
+                    }, response => {
+                        console.log(response);
+                        this.errorMsg = response.body.message;
+                    });
+                },
+                closeErrorMsg: function () {
+                    this.errorMsg = null;
+                }
+            },
+            mounted: function () {
+                if (this.authorized) {
+                    this.loadInstList();
+                }
+            }
+        })
+    </script>
+</body>
+
+</html>

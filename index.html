@@ -9,8 +9,9 @@
     <link rel="shortcut icon" type="image/png" href="favicon.png" />
 
     <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
-        crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.css" />
+
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://unpkg.com/nprogress@0.2.0/nprogress.css" rel="stylesheet">
 
@@ -109,7 +110,10 @@
                         <tbody>
                             <tr v-for="inst in instances">
                                 <td>
-                                    <span class="badge badge-info c-pointer" v-if="inst.status != 'active'" v-on:click="loadInstList">refresh (takes ~50s.)</span>
+                                    <b-btn variant="outline-info" size="sm" v-b-tooltip.hover.top title="It takes ~55s. to create IP address" v-if="inst.status != 'active'"
+                                        v-on:click="loadInstList">
+                                        refresh
+                                    </b-btn>
                                     <span v-if="inst.status == 'active'">{{ inst.ip }}</span>
                                 </td>
                                 <td>{{ inst.username }}</td>
@@ -122,7 +126,15 @@
                             </tr>
                         </tbody>
                     </table>
-                    <button type="button" class="btn btn-primary btn-lg btn-block" v-on:click="createInst">Create VPN</button>
+                    <div class="input-group">
+                        <select class="custom-select w-25" v-model="selectedRegion">
+                            <option disabled value="">Please select one</option>
+                            <option v-for="region in regions" v-bind:value="region.slug">{{ region.name }}</option>
+                        </select>
+                        <div class="input-group-append w-75">
+                            <button type="button" class="btn btn-primary btn-block" v-on:click="createInst">Create VPN</button>
+                        </div>
+                    </div>
 
                     <div class="text-center mt-5">
                         <b>How to configure VPN on your device</b>
@@ -153,7 +165,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.0"></script>
-    <script src="https://unpkg.com/nprogress@0.2.0/nprogress.js"></script>
+    <script src="https://unpkg.com/nprogress@latest/nprogress.js"></script>
+    <script src="https://unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
+    <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
     <script>
         var params = new URLSearchParams(window.location.hash.substr(1))
         var token = params.get('access_token');
@@ -185,10 +199,16 @@
             data: {
                 authorized: !!token,
                 instances: [],
+                regions: [],
+                selectedRegion: '',
                 errorMsg: null
             },
             methods: {
                 createInst: function () {
+                    if (!this.selectedRegion) {
+                        return;
+                    }
+
                     var psk = generateRandomString();
                     var username = generateRandomString();
                     var password = generateRandomString();
@@ -202,7 +222,7 @@ docker run --name ipsec-vpn-server -e VPN_IPSEC_PSK=${psk} -e VPN_USER=${usernam
                     var newDroplet =
                         {
                             name: name,
-                            region: "fra1",
+                            region: this.selectedRegion,
                             size: "s-1vcpu-1gb",
                             image: "docker-16-04",
                             tags: [name, "psk:" + psk, "username:" + username, "password:" + password],
@@ -254,6 +274,24 @@ docker run --name ipsec-vpn-server -e VPN_IPSEC_PSK=${psk} -e VPN_USER=${usernam
                         this.errorMsg = response.body.message;
                     });
                 },
+                loadRegions: function () {
+                    this.$http.get('https://api.digitalocean.com/v2/regions').then(response => {
+                        if (response.status === 200) {
+                            this.regions = response.body.regions
+                                .filter(x => x.available)
+                                .map(x => {
+                                    return {
+                                        name: x.name,
+                                        slug: x.slug
+                                    };
+                                })
+                                .sort((a, b) => a.name > b.name);
+                        }
+                    }, response => {
+                        console.log(response);
+                        this.errorMsg = response.body.message;
+                    });
+                },
                 closeErrorMsg: function () {
                     this.errorMsg = null;
                 }
@@ -261,6 +299,7 @@ docker run --name ipsec-vpn-server -e VPN_IPSEC_PSK=${psk} -e VPN_USER=${usernam
             mounted: function () {
                 if (this.authorized) {
                     this.loadInstList();
+                    this.loadRegions();
                 }
             }
         })

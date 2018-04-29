@@ -63,33 +63,20 @@
     <nav class="navbar navbar-light bg-light d-flex flex-row-reverse">
         <a class="navbar-text" href="https://github.com/ozonni/do-vpn">View on GitHub</a>
     </nav>
-    <main role="main" class="container" id="app">
+    <main role="main" class="container" v-cloak id="app">
         <div class="py-4 text-center">
             <i class="material-icons md-48">vpn_lock</i>
-            <h2>Do your own VPN</h2>
-            <p class="mt-4" v-if="!authorized">Using
-                <a href="https://www.digitalocean.com" target="_blank">DigitalOcean</a> you can have your private VPN server just for $5/mo. We do
-                <b>NOT</b> charge anything, you only pay to DigitalOcean for droplets and we do
-                <b>NOT</b> store any of your data, as well as we do
-                <b>NOT</b> analyze your traffic. We just make it simple to set up your own VPN. If you already have DigitalOcean
-                account you can proceed by clicking on
-                <b>Authorize</b> otherwise follow this referral
-                <a href="https://m.do.co/c/0e1ce5621123" target="_blank">link</a> to create a new account (you will get $10 in credit, will be enough for 2 month).</p>
+            <h2>{{ $t("message.doVPN") }}</h2>
+            <p class="mt-4" v-if="!authorized" v-html="$t('message.welcome')"></p>
         </div>
         <div>
-
             <div class="row justify-content-md-center">
                 <div class="col-md-8" v-if="!authorized">
                     <a class="btn btn-primary btn-lg btn-block" href="https://cloud.digitalocean.com/v1/oauth/authorize?response_type=token&client_id=a74eb85bd3567014726fbf26a6f713cbf64c28224d5b838b8abbc9706fcec178&redirect_uri=https://ozonni.github.io/do-vpn/&scope=read write"
-                        role="button">Authorize with DigitalOcean</a>
+                        role="button">{{ $t("message.authorize") }}</a>
                 </div>
-                <div class="col-md-10" v-cloak v-if="authorized">
-                    <p>
-                        Below is a list of VPN servers you have created. You can delete one or create a new one. By creating a new VPN server a new
-                        DigitalOcean droplet will be created in your account with 1TB internet traffic available. Each VPN
-                        server will cost you
-                        <a href="https://www.digitalocean.com/pricing" target="_blank">$5/mo</a>.
-                    </p>
+                <div class="col-md-10" v-if="authorized">
+                    <p v-html="$t('message.intro')"></p>
                     <div class="alert alert-danger" role="alert" v-if="errorMsg">
                         {{ errorMsg }}
                         <button type="button" class="close" data-dismiss="alert" aria-label="Close" v-on:click="closeErrorMsg">
@@ -110,9 +97,9 @@
                         <tbody>
                             <tr v-for="inst in instances">
                                 <td>
-                                    <b-btn variant="outline-info" size="sm" v-b-tooltip.hover.top title="It takes ~55s. to create IP address" v-if="inst.status != 'active'"
+                                    <b-btn variant="outline-info" size="sm" v-b-tooltip.hover.top :title="$t('message.takes55Sec')" v-if="inst.status != 'active'"
                                         v-on:click="loadInstList">
-                                        refresh
+                                        {{ $t("message.refresh") }}
                                     </b-btn>
                                     <span v-if="inst.status == 'active'">{{ inst.ip }}</span>
                                 </td>
@@ -128,16 +115,16 @@
                     </table>
                     <div class="input-group">
                         <select class="custom-select w-25" v-model="selectedRegion">
-                            <option disabled value="">Please select region</option>
+                            <option disabled value="">{{ $t("message.selectRegion") }}</option>
                             <option v-for="region in regions" v-bind:value="region.slug">{{ region.name }}</option>
                         </select>
                         <div class="input-group-append w-75">
-                            <button type="button" class="btn btn-primary btn-block" v-on:click="createInst">Create VPN</button>
+                            <button type="button" class="btn btn-primary btn-block" v-on:click="createInst">{{ $t("message.createVPN") }}</button>
                         </div>
                     </div>
 
                     <div class="text-center mt-5">
-                        <b>How to configure VPN on your device</b>
+                        <b>{{ $t("message.howTo") }}</b>
                         <ul class="list-inline">
                             <li class="list-inline-item">
                                 <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#ios" target="_blank">iOS (iPhone/iPad)</a>
@@ -166,6 +153,7 @@
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.0"></script>
     <script src="https://unpkg.com/nprogress@latest/nprogress.js"></script>
+    <script src="https://unpkg.com/vue-i18n/dist/vue-i18n.js"></script>
     <script src="https://unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
     <script src="https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.js"></script>
     <script>
@@ -194,7 +182,55 @@
             return text;
         };
 
+        const messages = {
+            'en': {
+                message: {
+                    doVPN: 'Do your own VPN',
+                    authorize: 'Authorize with DigitalOcean',
+                    howTo: 'How to configure VPN on your device',
+                    createVPN: 'Create VPN',
+                    selectRegion: 'Please select region',
+                    refresh: 'refresh',
+                    takes55Sec: 'It takes ~55s. to create IP address',
+                    intro: `Below is a list of VPN servers you have created. You can delete one or create a new one. By creating a new VPN server a new
+                DigitalOcean droplet will be created in your account with 1TB internet traffic available. Each VPN
+                server will cost you <a href="https://www.digitalocean.com/pricing" target="_blank">$5/mo</a>.`,
+                    welcome: `Using <a href="https://www.digitalocean.com" target="_blank">DigitalOcean</a> you can have your private VPN server just for $5/mo. We do
+                <b>NOT</b> charge anything, you only pay to DigitalOcean for droplets and we do
+                <b>NOT</b> store any of your data, as well as we do
+                <b>NOT</b> analyze your traffic. We just make it simple to set up your own VPN. If you already have DigitalOcean
+                account you can proceed by clicking on
+                <b>Authorize</b> otherwise follow this referral
+                <a href="https://m.do.co/c/0e1ce5621123" target="_blank">link</a> to create a new account (you will get $10 in credit, will be enough for 2 month).`
+                }
+            },
+            'ru': {
+                message: {
+                    doVPN: 'Cоздай собственный VPN',
+                    authorize: 'Зайти через DigitalOcean',
+                    howTo: 'Как настроить VPN на устройстве',
+                    createVPN: 'Создать VPN',
+                    selectRegion: 'Выберите регион',
+                    refresh: 'обновить',
+                    takes55Sec: 'Занимает ~55сек. чтобы создать IP адрес',
+                    intro: `Ниже вы можете видеть список созданных VPN серверов. Вы можете удалять их, а также создавать новые. При создании VPN сервера, в вашем аккаунте DigitalOcean создается новый сервер с 1 Tерабайтом доступного трафика. 
+                Каждый VPN сервер стоит <a href="https://www.digitalocean.com/pricing" target="_blank">$5 в месяц</a>. VPN аккаунт может быть использован с разных устройств.`,
+                    welcome: `Используя <a href="https://www.digitalocean.com" target="_blank">DigitalOcean</a> вы можете создать свой собственный приватный VPN за 5$ в месяц. 
+                Вы платите <b>только за сервера</b> DigitalOcean. Мы <b>НЕ</b> анализируем ваш трафик и <b>НЕ</b> храним ваши данные. 
+                Мы просто делаем настройку VPN доступной для каждого. Нажмите на кнопку <b>Авторизации</b> если у вас уже есть аккаунт в DigitalOcean. 
+                Иначе используйте <a href="https://m.do.co/c/0e1ce5621123" target="_blank">реферальную ссылку</a> что бы создать новый аккаунт (вы получите $10 в подарок, этого хватит на 2 месяца использования).`
+                }
+            }
+        };
+
+        const i18n = new VueI18n({
+            locale: navigator.language.substr(0, 2),
+            fallbackLocale: 'en',
+            messages,
+        })
+
         var app = new Vue({
+            i18n,
             el: '#app',
             data: {
                 authorized: !!token,

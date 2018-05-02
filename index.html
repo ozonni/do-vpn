@@ -245,7 +245,7 @@
                         .replace("{password}", inst.password)
                         .replace("{ip}", inst.ip);
 
-                    return "data:application/octet-stream;base64," + btoa(xml);
+                    return "data:application/x-apple-aspen-config;base64," + btoa(xml);
                 },
                 createInst: function () {
                     if (!this.selectedRegion) {

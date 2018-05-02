@@ -26,26 +26,18 @@
     </script>
 
     <style>
-        html {
-            position: relative;
-            min-height: 100%;
-        }
-
-        body {
-            margin-bottom: 60px;
-        }
-
-        .footer {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 60px;
-            line-height: 60px;
-            background-color: #f5f5f5;
-        }
-
         .c-pointer {
             cursor: pointer;
+        }
+
+        .nostyle,
+        .nostyle:hover {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .material-icons.md-18 {
+            font-size: 18px;
         }
 
         .material-icons.md-48 {
@@ -90,8 +82,7 @@
                                 <th scope="col">Username</th>
                                 <th scope="col">Password</th>
                                 <th scope="col">PSK</th>
-                                <th scope="col">Created</th>
-                                <th scope="col">#</th>
+                                <th scope="col"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -106,9 +97,12 @@
                                 <td>{{ inst.username }}</td>
                                 <td>{{ inst.password }}</td>
                                 <td>{{ inst.psk }}</td>
-                                <td>{{ inst.created }}</td>
-                                <td>
-                                    <i class="material-icons c-pointer" title="Delete" v-on:click="deleteInst(inst)">delete_forever</i>
+                                <td class="d-flex justify-content-between">
+                                    <a class="nostyle" download="dovpn.mobileconfig" :href="getMobileConfigData(inst)" v-if="inst.status == 'active'">
+                                        <i class="material-icons" title="ios/macos setup">phonelink_setup</i>
+                                    </a>
+
+                                    <i class="material-icons c-pointer ml-auto" title="Delete" v-on:click="deleteInst(inst)">delete_forever</i>
                                 </td>
                             </tr>
                         </tbody>
@@ -127,13 +121,21 @@
                         <b>{{ $t("message.howTo") }}</b>
                         <ul class="list-inline">
                             <li class="list-inline-item">
-                                <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#ios" target="_blank">iOS (iPhone/iPad)</a>
+                                <a id="ios-link" href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#ios" target="_blank">iOS (iPhone/iPad)</a>
+                                <b-tooltip placement="bottom" target="ios-link">
+                                    {{ $t("message.useAutoSetup") }}
+                                    <i class="material-icons md-18 align-middle" title="ios/macos setup">phonelink_setup</i>
+                                </b-tooltip>
                             </li>
                             <li class="list-inline-item">
                                 <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#android" target="_blank">Android</a>
                             </li>
                             <li class="list-inline-item">
-                                <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#os-x" target="_blank">OS X (macOS)</a>
+                                <a id="macos-link" href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#os-x" target="_blank">OS X (macOS)</a>
+                                <b-tooltip placement="bottom" target="macos-link">
+                                    {{ $t("message.useAutoSetup") }}
+                                    <i class="material-icons md-18 align-middle" title="ios/macos setup">phonelink_setup</i>
+                                </b-tooltip>
                             </li>
                             <li class="list-inline-item">
                                 <a href="https://github.com/hwdsl2/setup-ipsec-vpn/blob/master/docs/clients.md#windows" target="_blank">Windows</a>
@@ -143,12 +145,6 @@
                 </div>
             </div>
     </main>
-
-    <footer class="footer">
-        <div class="container">
-            <span class="text-muted">To deny people their human rights is to challenge their very humanity - Nelson Mandela</span>
-        </div>
-    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
     <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.0"></script>
@@ -192,6 +188,7 @@
                     selectRegion: 'Please select region',
                     refresh: 'refresh',
                     takes55Sec: 'It takes ~55s. to create IP address',
+                    useAutoSetup: 'Use auto-setup. Look for',
                     intro: `Below is a list of VPN servers you have created. You can delete one or create a new one. By creating a new VPN server a new
                 DigitalOcean droplet will be created in your account with 1TB internet traffic available. Each VPN
                 server will cost you <a href="https://www.digitalocean.com/pricing" target="_blank">$5/mo</a>.`,
@@ -213,6 +210,7 @@
                     selectRegion: 'Выберите регион',
                     refresh: 'обновить',
                     takes55Sec: 'Занимает ~55сек. чтобы создать IP адрес',
+                    useAutoSetup: 'Автонастройка, нажмите на',
                     intro: `Ниже вы можете видеть список созданных VPN серверов. Вы можете удалять их, а также создавать новые. При создании VPN сервера, в вашем аккаунте DigitalOcean создается новый сервер с 1 Tерабайтом доступного трафика. 
                 Каждый VPN сервер стоит <a href="https://www.digitalocean.com/pricing" target="_blank">$5 в месяц</a>. VPN аккаунт может быть использован с разных устройств.`,
                     welcome: `Используя <a href="https://www.digitalocean.com" target="_blank">DigitalOcean</a> вы можете создать свой собственный приватный VPN за 5$ в месяц. 
@@ -240,6 +238,15 @@
                 errorMsg: null
             },
             methods: {
+                getMobileConfigData: function (inst) {
+                    var xml = mobileConfig
+                        .replace("{psk}", btoa(inst.psk))
+                        .replace("{username}", inst.username)
+                        .replace("{password}", inst.password)
+                        .replace("{ip}", inst.ip);
+
+                    return "data:application/octet-stream;base64," + btoa(xml);
+                },
                 createInst: function () {
                     if (!this.selectedRegion) {
                         return;
@@ -292,7 +299,6 @@ docker run --name ipsec-vpn-server -e VPN_IPSEC_PSK=${psk} -e VPN_USER=${usernam
                                 var inst = {
                                     id: x.id,
                                     status: x.status,
-                                    created: x.created_at,
                                     username: x.tags.find(x => x.startsWith("username:")).substr(9),
                                     password: x.tags.find(x => x.startsWith("password:")).substr(9),
                                     psk: x.tags.find(x => x.startsWith("psk:")).substr(4),
@@ -339,6 +345,79 @@ docker run --name ipsec-vpn-server -e VPN_IPSEC_PSK=${psk} -e VPN_USER=${usernam
                 }
             }
         })
+
+        var mobileConfig = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>IPSec</key>
+			<dict>
+				<key>AuthenticationMethod</key>
+				<string>SharedSecret</string>
+				<key>LocalIdentifierType</key>
+				<string>KeyID</string>
+				<key>SharedSecret</key>
+				<data>{psk}</data>
+			</dict>
+			<key>IPv4</key>
+			<dict>
+				<key>OverridePrimary</key>
+				<integer>1</integer>
+			</dict>
+			<key>PPP</key>
+			<dict>
+				<key>AuthName</key>
+				<string>{username}</string>
+				<key>AuthPassword</key>
+				<string>{password}</string>
+				<key>CommRemoteAddress</key>
+				<string>{ip}</string>
+			</dict>
+			<key>PayloadDescription</key>
+			<string>Configures VPN settings</string>
+			<key>PayloadDisplayName</key>
+			<string>VPN</string>
+			<key>PayloadIdentifier</key>
+			<string>com.apple.vpn.managed.F905E46A-60F6-4ABD-91D1-061C4EB8F838</string>
+			<key>PayloadType</key>
+			<string>com.apple.vpn.managed</string>
+			<key>PayloadUUID</key>
+			<string>F905E46A-60F6-4ABD-91D1-061C4EB8F838</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>Proxies</key>
+			<dict>
+				<key>HTTPEnable</key>
+				<integer>0</integer>
+				<key>HTTPSEnable</key>
+				<integer>0</integer>
+			</dict>
+			<key>UserDefinedName</key>
+			<string>DO VPN</string>
+			<key>VPNType</key>
+			<string>L2TP</string>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>Profile to quickly configure VPN</string>
+	<key>PayloadDisplayName</key>
+	<string>DO VPN</string>
+	<key>PayloadIdentifier</key>
+	<string>5D042124-0DD9-4AD1-803B-F900B3CA85CB</string>
+	<key>PayloadRemovalDisallowed</key>
+	<false/>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>BB8694E4-8DF2-45F7-BC9B-E497F3F7D6A6</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>
+`;
     </script>
 </body>
 

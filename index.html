@@ -267,7 +267,7 @@ docker run --name ipsec-vpn-server -e VPN_IPSEC_PSK=${psk} -e VPN_USER=${usernam
                             name: name,
                             region: this.selectedRegion,
                             size: "s-1vcpu-1gb",
-                            image: "docker-16-04",
+                            image: "23219707",
                             tags: [name, "psk:" + psk, "username:" + username, "password:" + password],
                             user_data: userData
                         };
